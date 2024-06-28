@@ -17,7 +17,7 @@ from passlib.context import CryptContext # type: ignore
 from app.utils.environment import Config
 from app.utils.db import neo4j_driver
 from app.utils.schema import Token, TokenData, User, UserInDB
-
+from pydantic import BaseModel
 
 # Set the API Router
 router = APIRouter()
@@ -100,10 +100,18 @@ async def get_current_active_user(current_user: User = Depends(get_current_user)
     return current_user
 
 
-# Endpoint for token authorisation
+class Token(BaseModel):
+    access_token: str
+    token_type: str
+
+
+class LoginRequest(BaseModel):
+    username: str
+    password: str
+
 @router.post("/token", response_model=Token)
-async def login_for_access_token(form_data: OAuth2PasswordRequestForm = Depends()):
-    user = authenticate_user(form_data.username, form_data.password)
+async def login_for_access_token(login_request: LoginRequest):
+    user = authenticate_user(login_request.username, login_request.password)
     if not user:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
@@ -117,11 +125,32 @@ async def login_for_access_token(form_data: OAuth2PasswordRequestForm = Depends(
     return {"access_token": access_token, "token_type": "bearer"}
 
 
+# # Endpoint for token authorisation
+# @router.post("/token", response_model=Token)
+# async def login_for_access_token(form_data: OAuth2PasswordRequestForm = Depends()):
+#     user = authenticate_user(form_data.username, form_data.password)
+#     if not user:
+#         raise HTTPException(
+#             status_code=status.HTTP_401_UNAUTHORIZED,
+#             detail="Incorrect username or password",
+#             headers={"WWW-Authenticate": "Bearer"},
+#         )
+#     access_token_expires = timedelta(minutes=Config.ACCESS_TOKEN_EXPIRE_MINUTES)
+#     access_token = create_access_token(
+#         data={"sub": user.username}, expires_delta=access_token_expires
+#     )
+#     return {"access_token": access_token, "token_type": "bearer"}
+
+
+class SignUpRequest(BaseModel):
+    username: str
+    password: str
+    full_name: Optional[str] = None
+
+
 # Endpoint for creating first user, at launch with appliaction password rather than user credentials
 @router.post('/launch_user')
-async def first_user(username: str,
-                     password: str,
-                     full_name: Optional[str] = None):
+async def first_user(signup_request:SignUpRequest):
                     #  application_password: str,
 
     # Check application password is correct
@@ -136,9 +165,9 @@ async def first_user(username: str,
 
     # Create dictionary of new user attributes
     attributes = {
-        'username': username,
-        'full_name': full_name,
-        'hashed_password': create_password_hash(password),
+        'username': signup_request.username,
+        'full_name': signup_request.full_name,
+        'hashed_password': create_password_hash(signup_request.password),
         'joined': str(datetime.now(timezone.utc)),
         'disabled': False,
     }
@@ -149,27 +178,16 @@ async def first_user(username: str,
 
     with neo4j_driver.session() as session:
         # First, run a search of users to determine if username is already in use
-        check_users = session.run(query=cypher_search, parameters={'username': username})
+        check_users = session.run(query=cypher_search, parameters={'username': signup_request.username})
 
         # Return error message if username is already in the database
         if check_users.data():
             raise HTTPException(
                 status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
-                detail=f"Operation not permitted, user with username {username} already exists.",
+                detail=f"Operation not permitted, user with username {signup_request.username} already exists.",
                 headers={"WWW-Authenticate": "Bearer"}
             )
 
         response = session.run(query=cypher_create, parameters={'params': attributes})
         user_data = response.data()[0]['user']
     return User(**user_data)
-
-
-from fastapi.templating import Jinja2Templates
-from fastapi import FastAPI, Form, Request
-
-
-templates = Jinja2Templates(directory="Frontend/public")
-
-@router.get('/')
-async def login_page(request: Request):
-    return templates.TemplateResponse("index.html", {"request": request})
