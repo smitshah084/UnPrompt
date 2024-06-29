@@ -1,10 +1,7 @@
-import Login from "./pages/login/login";
-import Register from "./pages/register/register";
-import { BrowserRouter as Router, Route, Routes } from "react-router-dom";
 import { Bounce, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
-import Home from "./pages/home/home";
-
+import AuthProvider from "./hooks/useAuth";
+import Routes from "./routes";
 
 function App() {
   return (
@@ -18,14 +15,9 @@ function App() {
         theme="light"
         transition={Bounce}
       />
-      <Router>
-        <Routes>
-          <Route path="/" element={<Home />} />
-
-          <Route path="/login" element={<Login />} />
-          <Route path="/register" element={<Register />} />
-        </Routes>
-      </Router>
+      <AuthProvider>
+        <Routes />
+      </AuthProvider>
     </>
   );
 }

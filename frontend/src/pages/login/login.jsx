@@ -2,12 +2,13 @@ import React, { useState } from "react";
 import { postData } from "../../axios/fetchData";
 import { toast } from "react-toastify";
 import { useNavigate } from "react-router-dom";
+import { useAuth } from "../../hooks/useAuth";
 
 function Login() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const navigate = useNavigate();
-
+  const { setToken } = useAuth();
   const handleLogin = async (event) => {
     event.preventDefault();
     try {
@@ -17,7 +18,7 @@ function Login() {
       });
       const { access_token } = response;
 
-      sessionStorage.setItem("access_token", access_token);
+      setToken(access_token);
       toast("🦄 Wow so easy!");
 
       navigate("/", { replace: true });

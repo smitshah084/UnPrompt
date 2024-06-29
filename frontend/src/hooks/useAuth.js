@@ -1,33 +1,43 @@
-import * as React from "react";
+import axios from "axios";
+import { createContext, useContext, useEffect, useMemo, useState } from "react";
 
-const authContext = React.createContext();
+const AuthContext = createContext();
 
-function useAuth() {
-  const [authed, setAuthed] = React.useState(false);
+const AuthProvider = ({ children }) => {
+  // State to hold the authentication token
+  const [token, setToken] = useState(sessionStorage.getItem("access_token"));
 
-  return {
-    authed,
-    login() {
-      return new Promise((res) => {
-        setAuthed(true);
-        res();
-      });
-    },
-    logout() {
-      return new Promise((res) => {
-        setAuthed(false);
-        res();
-      });
-    },
+  const logout = () => {
+    setToken();
   };
-}
+  useEffect(() => {
+    if (token) {
+      axios.defaults.headers.common["Authorization"] = "Bearer " + token;
+      sessionStorage.setItem("access_token", token);
+    } else {
+      delete axios.defaults.headers.common["Authorization"];
+      sessionStorage.removeItem("access_token");
+    }
+  }, [token]);
 
-export function AuthProvider({ children }) {
-  const auth = useAuth();
+  // Memoized value of the authentication context
+  const contextValue = useMemo(
+    () => ({
+      token,
+      setToken,
+      logout,
+    }),
+    [token]
+  );
 
-  return <authContext.Provider value={auth}>{children}</authContext.Provider>;
-}
+  // Provide the authentication context to the children components
+  return (
+    <AuthContext.Provider value={contextValue}>{children}</AuthContext.Provider>
+  );
+};
 
-export default function AuthConsumer() {
-  return React.useContext(authContext);
-}
+export const useAuth = () => {
+  return useContext(AuthContext);
+};
+
+export default AuthProvider;
