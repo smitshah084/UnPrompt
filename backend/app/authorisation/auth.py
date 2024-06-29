@@ -4,19 +4,19 @@ from typing import Optional
 import time
 
 # FastAPI modules for authorisation
-from fastapi import Depends, APIRouter, HTTPException, status # type: ignore
-from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm # type: ignore
+from fastapi import Depends, APIRouter, HTTPException, status  # type: ignore
+from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm  # type: ignore
 
 
 # Modules for encryption and security
-from jose import JWTError, jwt 
-from passlib.context import CryptContext # type: ignore
+from jose import JWTError, jwt
+from passlib.context import CryptContext  # type: ignore
 
 
 # Import utilities functions, configuration and schemas
 from app.utils.environment import Config
 from app.utils.db import neo4j_driver
-from app.utils.schema import Token, TokenData, User, UserInDB
+from app.utils.schema import Token, TokenData, User, UserInDB, SignUpRequest, LoginRequest
 from pydantic import BaseModel
 
 # Set the API Router
@@ -37,11 +37,11 @@ def verify_password(plain_password, password_hash):
 
 # Search the database for user with specified username
 def get_user(username: str):
-    query = f'MATCH (a:User) WHERE a.username = \'{username}\' RETURN a'
+    query = f"MATCH (a:User) WHERE a.username = '{username}' RETURN a"
 
     with neo4j_driver.session() as session:
         user_in_db = session.run(query)
-        user_data = user_in_db.data()[0]['a']
+        user_data = user_in_db.data()[0]["a"]
         return UserInDB(**user_data)
 
 
@@ -72,7 +72,7 @@ def create_access_token(data: dict, expires_delta: Optional[timedelta] = None):
 
 # Decrypt the token and retrieve the username from payload
 async def get_current_user(token: str = Depends(oauth2_scheme)):
-    print('in get_current_user')
+    print("in get_current_user")
     credentials_exception = HTTPException(
         status_code=status.HTTP_401_UNAUTHORIZED,
         detail="Could not validate credentials",
@@ -94,20 +94,11 @@ async def get_current_user(token: str = Depends(oauth2_scheme)):
 
 # Confirm that user is not disabled as a user
 async def get_current_active_user(current_user: User = Depends(get_current_user)):
-    print('in get current active user')
+    print("in get current active user")
     if current_user.disabled:
         raise HTTPException(status_code=400, detail="Inactive user")
     return current_user
 
-
-class Token(BaseModel):
-    access_token: str
-    token_type: str
-
-
-class LoginRequest(BaseModel):
-    username: str
-    password: str
 
 @router.post("/token", response_model=Token)
 async def login_for_access_token(login_request: LoginRequest):
@@ -125,33 +116,9 @@ async def login_for_access_token(login_request: LoginRequest):
     return {"access_token": access_token, "token_type": "bearer"}
 
 
-# # Endpoint for token authorisation
-# @router.post("/token", response_model=Token)
-# async def login_for_access_token(form_data: OAuth2PasswordRequestForm = Depends()):
-#     user = authenticate_user(form_data.username, form_data.password)
-#     if not user:
-#         raise HTTPException(
-#             status_code=status.HTTP_401_UNAUTHORIZED,
-#             detail="Incorrect username or password",
-#             headers={"WWW-Authenticate": "Bearer"},
-#         )
-#     access_token_expires = timedelta(minutes=Config.ACCESS_TOKEN_EXPIRE_MINUTES)
-#     access_token = create_access_token(
-#         data={"sub": user.username}, expires_delta=access_token_expires
-#     )
-#     return {"access_token": access_token, "token_type": "bearer"}
-
-
-class SignUpRequest(BaseModel):
-    username: str
-    password: str
-    full_name: Optional[str] = None
-
-
 # Endpoint for creating first user, at launch with appliaction password rather than user credentials
-@router.post('/launch_user')
-async def first_user(signup_request:SignUpRequest):
-                    #  application_password: str,
+@router.post("/launch_user")
+async def first_user(signup_request: SignUpRequest):
 
     # Check application password is correct
     # if application_password != Config.APP_PASSWORD and False:
@@ -165,29 +132,31 @@ async def first_user(signup_request:SignUpRequest):
 
     # Create dictionary of new user attributes
     attributes = {
-        'username': signup_request.username,
-        'full_name': signup_request.full_name,
-        'hashed_password': create_password_hash(signup_request.password),
-        'joined': str(datetime.now(timezone.utc)),
-        'disabled': False,
+        "username": signup_request.username,
+        "full_name": signup_request.full_name,
+        "hashed_password": create_password_hash(signup_request.password),
+        "joined": str(datetime.now(timezone.utc)),
+        "disabled": False,
     }
 
     # Write Cypher query and run against the database
-    cypher_search = 'MATCH (user:User) WHERE user.username = $username RETURN user'
-    cypher_create = 'CREATE (user:User $params) RETURN user'
+    cypher_search = "MATCH (user:User) WHERE user.username = $username RETURN user"
+    cypher_create = "CREATE (user:User $params) RETURN user"
 
     with neo4j_driver.session() as session:
         # First, run a search of users to determine if username is already in use
-        check_users = session.run(query=cypher_search, parameters={'username': signup_request.username})
+        check_users = session.run(
+            query=cypher_search, parameters={"username": signup_request.username}
+        )
 
         # Return error message if username is already in the database
         if check_users.data():
             raise HTTPException(
                 status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
                 detail=f"Operation not permitted, user with username {signup_request.username} already exists.",
-                headers={"WWW-Authenticate": "Bearer"}
+                headers={"WWW-Authenticate": "Bearer"},
             )
 
-        response = session.run(query=cypher_create, parameters={'params': attributes})
-        user_data = response.data()[0]['user']
+        response = session.run(query=cypher_create, parameters={"params": attributes})
+        user_data = response.data()[0]["user"]
     return User(**user_data)

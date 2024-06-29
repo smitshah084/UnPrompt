@@ -13,6 +13,17 @@ class TokenData(BaseModel):
     username: Optional[str] = None
 
 
+class LoginRequest(BaseModel):
+    username: str
+    password: str
+
+
+class SignUpRequest(BaseModel):
+    username: str
+    password: str
+    full_name: Optional[str] = None
+
+
 # Node response models
 class NodeBase(BaseModel):
     node_id: int
