@@ -5,6 +5,7 @@ import Register from "../pages/register/register";
 
 import { useAuth } from "../hooks/useAuth";
 import NavBar from "../components/NavBar";
+import Home from "../pages/home/home";
 
 const Routes = () => {
   const { token } = useAuth();
@@ -30,7 +31,7 @@ const Routes = () => {
       children: [
         {
           path: "",
-          element: <div>User Home Page</div>,
+          element: <Home/>
         },
         {
           path: "/profile",
