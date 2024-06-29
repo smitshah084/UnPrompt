@@ -66,9 +66,8 @@ const Routes = () => {
         </>
       ),
       children: [
+        ...(token ? routesForAuthenticatedOnly : routesForNotAuthenticatedOnly),
         ...routesForPublic,
-        ...(!token ? routesForNotAuthenticatedOnly : []),
-        ...routesForAuthenticatedOnly,
       ],
     },
   ]);
