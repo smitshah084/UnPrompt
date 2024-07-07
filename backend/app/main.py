@@ -8,6 +8,7 @@ from app.authorisation.auth import get_current_active_user
 from app.user_management import users
 from app.graph import crud
 from app.query import cypher
+from app.content import content_delivery
 
 
 app = FastAPI(title='Fast-graph',
@@ -20,6 +21,13 @@ app.include_router(
     auth.router,
     prefix='/auth',
     tags=['Authorisation']
+)
+
+app.include_router(
+    content_delivery.router,
+    prefix='/content',
+    tags=['Content'],
+    dependencies=[Depends(get_current_active_user)]
 )
 
 app.include_router(
@@ -41,3 +49,4 @@ app.include_router(
     tags=['Query Database'],
     dependencies=[Depends(get_current_active_user)]
 )
+
