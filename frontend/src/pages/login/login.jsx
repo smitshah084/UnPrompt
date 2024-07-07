@@ -1,5 +1,4 @@
 import React, { useState } from "react";
-import { postData } from "../../axios/fetchData";
 import { toast } from "react-toastify";
 import { NavLink, useNavigate } from "react-router-dom";
 import { useAuth } from "../../hooks/useAuth";
@@ -8,17 +7,12 @@ function Login() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const navigate = useNavigate();
-  const { setToken } = useAuth();
+  const { login } = useAuth();
+  
   const handleLogin = async (event) => {
     event.preventDefault();
     try {
-      const response = await postData("/auth/token", {
-        username: email,
-        password,
-      });
-      const { access_token } = response;
-
-      setToken(access_token);
+      await login(email,password);
       toast("🦄 Wow so easy!");
 
       navigate("/", { replace: true });

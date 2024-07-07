@@ -16,8 +16,13 @@ from passlib.context import CryptContext  # type: ignore
 # Import utilities functions, configuration and schemas
 from app.utils.environment import Config
 from app.utils.db import neo4j_driver
-from app.utils.schema import Token, TokenData, User, UserInDB, SignUpRequest, LoginRequest
-from pydantic import BaseModel
+from app.utils.schema import (
+    Token,
+    TokenData,
+    User,
+    UserInDB,
+    SignUpRequest,
+)
 
 # Set the API Router
 router = APIRouter()
@@ -100,9 +105,10 @@ async def get_current_active_user(current_user: User = Depends(get_current_user)
     return current_user
 
 
+# Endpoint for token authorisation
 @router.post("/token", response_model=Token)
-async def login_for_access_token(login_request: LoginRequest):
-    user = authenticate_user(login_request.username, login_request.password)
+async def login_for_access_token(form_data: OAuth2PasswordRequestForm = Depends()):
+    user = authenticate_user(form_data.username, form_data.password)
     if not user:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,

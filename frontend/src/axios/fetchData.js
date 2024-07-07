@@ -1,17 +1,17 @@
 import axiosInstance from "./axiosInstance";
 
-export const fetchData = async (ENDPOINT) => {
+export const fetchData = async (ENDPOINT,customHeaders) => {
   try {
-    const response = await axiosInstance.get(ENDPOINT);
+    const response = await axiosInstance.get(ENDPOINT,customHeaders);
     return response.data;
   } catch (error) {
     console.error("Error fetching data", error);
   }
 };
 
-export const postData = async (ENDPOINT, Payload) => {
+export const postData = async (ENDPOINT, Payload,customHeaders) => {
   try {
-    const response = await axiosInstance.post(ENDPOINT, Payload);
+    const response = await axiosInstance.post(ENDPOINT, Payload,customHeaders);
     return response.data;
   } catch (error) {
     console.error("Error fetching data", error);
