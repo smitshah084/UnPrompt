@@ -1,6 +1,7 @@
 # Import main FastAPI modules
 from fastapi import FastAPI, Depends # type: ignore
 
+from fastapi.middleware.cors import CORSMiddleware
 
 # Internal packages
 from app.authorisation import auth
@@ -16,6 +17,17 @@ app = FastAPI(title='Fast-graph',
               version="0.1",
               docs_url='/docs',
               redoc_url='/redoc')
+
+
+# Add CORS middleware
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],  # Adjust this list to the specific origins you want to allow
+    allow_credentials=True,
+    allow_methods=["*"],  # Allow all HTTP methods
+    allow_headers=["*"],  # Allow all headers
+)
+
 
 app.include_router(
     auth.router,
