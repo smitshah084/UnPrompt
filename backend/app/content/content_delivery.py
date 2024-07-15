@@ -312,7 +312,7 @@ Instructions:
 
 
 
-@router.post('/get_cards', response_model=card_batch)
+@router.get('/get_cards', response_model=card_batch)
 async def get_cards(current_user: User = Depends(get_current_active_user)):
 
     dic_cards = neo.gen_cards(current_user.username)
