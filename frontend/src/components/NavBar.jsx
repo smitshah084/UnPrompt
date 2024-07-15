@@ -25,7 +25,7 @@ const NavBar = () => {
   };
 
   return (
-    <nav className="bg-primary-600 p-4">
+    <nav className="bg-primary-600 p-4 sticky top-0 w-full z-10">
       <div className="max-w-8xl mx-auto flex justify-between items-center">
         <div className="flex items-center">
           <NavLink to="/" className="text-white text-xl font-bold">
