@@ -8,7 +8,7 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from app.utils.db import neo4j_driver
 from app.authorisation.auth import get_current_active_user
 from app.utils.schema import User, Node, Nodes, Relationship,card,card_batch
-
+from app.utils.environment import Config
 # Set the API Router
 router = APIRouter()
 
@@ -47,7 +47,7 @@ def text_to_embeddings(texts, model_name=model):
 class model:
 
     def __init__(self):
-        genai.configure(api_key='AIzaSyBENaq35tgqivfEbOVAMn4364zM7bh8VI8')
+        genai.configure(api_key=Config.GEMINI_KEY)
         self.model = genai.GenerativeModel('gemini-1.5-flash')
         self.wrong_answer_count = 0
 
@@ -73,7 +73,7 @@ class model:
 model=model()
 
 def google_image_search(query, num_results=1):
-    api_key = 'AIzaSyAxwMG247rlATI8MEmfheSzCgazNa0TYyI'
+    api_key = Config.IMAGE_KEY
     cx = '325794ae0dbb14a3b'
     search_url = "https://www.googleapis.com/customsearch/v1"
     params = {
@@ -265,16 +265,10 @@ class Neo4jManager:
         
 
         
-NEO4J_URI=''
-NEO4J_USERNAME=''
-NEO4J_PASSWORD=''
-AUTH = (NEO4J_USERNAME,NEO4J_PASSWORD)
-AURA_INSTANCEID=''
-AURA_INSTANCENAME=''
-image_key=''
+AUTH = (Config.NEO4J_USERNAME,Config.NEO4J_PASSWORD)
 
 
-neo = Neo4jManager(NEO4J_URI,AUTH)
+neo = Neo4jManager(Config.NEO4J_URI,AUTH)
 
 init_topic_recommendations = '''
         MATCH (n)
